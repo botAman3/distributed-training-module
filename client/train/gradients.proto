@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package gradients;
+
+service GradientService {
+  rpc FederatedTraining(stream ClientMessage) returns (stream ServerMessage) {}
+}
+
+message Gradient {
+  string name = 1;           // Parameter name (e.g., "conv.weight")
+  repeated float values = 2;  // Flattened gradient values
+  repeated int32 shape = 3;   // Original tensor shape
+}
+
+message GradientPacket {
+  string client_id = 1;      // Identifier for the client
+  repeated Gradient gradients = 2;
+  int32 epoch = 3;           // Current training epoch
+  int32 batch_size = 4;      // Optional: Number of samples used
+  double loss = 5;           // Optional: Client's training loss
+}
+
+message StartTraining {
+  string client_id = 1;
+  ModelMetadata model = 2;   // Optional: Initial model configuration
+}
+
+message ModelMetadata {
+  string architecture = 1;   // e.g., "CNN"
+  int32 version = 2;         // Model version tracking
+}
+
+message ServerMessage {
+  oneof msg {
+    string instruction = 1;        // Commands like "start_training", "stop"
+    GradientPacket updated_gradients = 2;
+    ServerConfig configuration = 3; // Additional server settings
+  }
+}
+
+message ServerConfig {
+  float learning_rate = 1;    // Optional: Server-controlled hyperparams
+  int32 max_epochs = 2;
+}
+
+message ClientMessage {
+  oneof msg {
+    StartTraining join = 1;
+    GradientPacket gradients = 2;
+    ClientStatus status = 3;  // Optional: Health checks, ready signals
+  }
+}
+
+message ClientStatus {
+  bool ready = 1;
+  string state = 2;          // e.g., "training", "waiting"
+}

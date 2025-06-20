@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package gradients;
+
+service GradientService {
+  rpc FederatedTraining(stream ClientMessage) returns (stream ServerMessage);
+}
+
+message Gradient {
+  string name = 1;
+  repeated float values = 2;
+  repeated int32 shape = 3;
+}
+
+message GradientPacket {
+  string client_id = 1;
+  repeated Gradient gradients = 2;
+  int32 epoch = 3;
+}
+
+message StartTraining {
+  string client_id = 1;
+}
+
+message ServerMessage {
+  oneof msg {
+    string instruction = 1;  // e.g., "start_training"
+    GradientPacket updated_gradients = 2;
+  }
+}
+
+message ClientMessage {
+  oneof msg {
+    StartTraining join = 1;
+    GradientPacket gradients = 2;
+  }
+}
